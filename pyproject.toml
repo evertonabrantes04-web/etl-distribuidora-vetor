@@ -1,0 +1,10 @@
+[project]
+name = "etl-distribuidora-vetor"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.1.2",
+    "openpyxl>=3.1.5",
+    "pandas>=3.1.0",
+    "requests>=2.34.2",
+]
