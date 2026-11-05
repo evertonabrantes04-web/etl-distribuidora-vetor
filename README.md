@@ -722,7 +722,7 @@ uv run python manage.py importar_clientes dados/clientes_distribuidora_vetor.csv
 Saída esperada em verde:
 
 ```text
-Lidas: 47 | Carregadas: 47 | Em Revisão: 1 | Descartadas: 0 | Concluída sem erros. 129 transformações auditadas.
+Lidas: 47 | Carregadas: 47 | Em Revisão: 1 | Descartadas: 0 | Concluída sem erros. 113 transformações auditadas.
 ```
 
 ### 5.3. Criar os Testes Automatizados com Mocks (`etl/tests.py`)
