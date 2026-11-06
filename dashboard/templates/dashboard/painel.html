@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ETL — Distribuidora Vetor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-body-tertiary">
+<main class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h1 class="h3 mb-0">Governança e Saneamento de Dados — Distribuidora Vetor</h1>
+            <p class="text-secondary small mb-0">Pipeline ETL de padronização, enriquecimento por CEP e rastreabilidade</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/" class="btn btn-outline-secondary">Painel Admin / Curadoria</a>
+            <a href="{% url 'exportar' %}" class="btn btn-success">Exportar Excel (.xlsx)</a>
+        </div>
+    </div>
+
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+
+    <form method="post" action="{% url 'importar' %}" enctype="multipart/form-data"
+          class="card card-body shadow-sm mb-4">
+        {% csrf_token %}
+        <label for="arquivo" class="form-label fw-semibold">Importar base CSV da Distribuidora Vetor</label>
+        <div class="input-group">
+            <input type="file" name="arquivo" id="arquivo" accept=".csv" class="form-control">
+            <button class="btn btn-primary">Executar Pipeline ETL</button>
+        </div>
+    </form>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4">
+        <div class="col">
+            <div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-secondary small">Clientes na Base Limpa</div>
+                <div class="fs-4 fw-semibold">{{ clientes.total|default:0 }}</div>
+                <div class="small text-secondary">
+                    {{ clientes.em_revisao|default:0 }} em revisão manual
+                </div>
+            </div></div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-secondary small">Consolidação de Bairros</div>
+                <div class="fs-4 fw-semibold">{{ clientes.bairros_antes|default:0 }} &rarr; {{ clientes.bairros_depois|default:0 }}</div>
+                <div class="small text-success">
+                    variações reduzidas para regiões oficiais
+                </div>
+            </div></div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-secondary small">Transformações Auditadas</div>
+                <div class="fs-4 fw-semibold">{{ total_logs|default:0 }}</div>
+                <div class="small text-secondary">
+                    {{ clientes.divergencias_cep|default:0 }} conflitos de CEP corrigidos
+                </div>
+            </div></div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100"><div class="card-body">
+                <div class="text-secondary small">Execuções do Pipeline</div>
+                <div class="fs-4 fw-semibold">{{ execucoes.total|default:0 }}</div>
+                <div class="small {% if execucoes.falhas %}text-danger{% else %}text-secondary{% endif %}">
+                    {{ execucoes.falhas|default:0 }} com erro
+                </div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">Clientes por Bairro Canônico (Após Tratamento)</div>
+                <div class="card-body"><canvas id="grafico-bairros"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold">Inconsistências Corrigidas por Campo</div>
+                <div class="card-body"><canvas id="grafico-auditoria"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header fw-semibold">Amostra de Rastreabilidade (Últimas 20 Decisões na Tabela de Auditoria)</div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Campo</th>
+                        <th>Valor Original</th>
+                        <th>Valor Tratado</th>
+                        <th>Critério / Fonte da Decisão</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for log in ultimos_logs %}
+                    <tr>
+                        <td class="fw-semibold">{{ log.id_cliente }}</td>
+                        <td><span class="badge text-bg-secondary">{{ log.campo }}</span></td>
+                        <td class="text-danger">{{ log.valor_original }}</td>
+                        <td class="text-success fw-semibold">{{ log.valor_tratado }}</td>
+                        <td class="small">{{ log.criterio }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-secondary">Nenhum registro auditado ainda. Rode o ETL.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header fw-semibold">Histórico de Execuções</div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Quando</th>
+                        <th>Arquivo</th>
+                        <th class="text-end">Lidas</th>
+                        <th class="text-end">Carregadas</th>
+                        <th class="text-end">Revisão Manual</th>
+                        <th>Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for execucao in ultimas %}
+                    <tr>
+                        <td>{{ execucao.iniciada_em|date:"d/m/Y H:i" }}</td>
+                        <td>{{ execucao.arquivo }}</td>
+                        <td class="text-end">{{ execucao.lidas }}</td>
+                        <td class="text-end">{{ execucao.carregadas }}</td>
+                        <td class="text-end">{{ execucao.em_revisao }}</td>
+                        <td>
+                            {% if execucao.sucesso %}
+                                <span class="badge text-bg-success">OK</span>
+                                <span class="small text-secondary">{{ execucao.mensagem }}</span>
+                            {% else %}
+                                <span class="badge text-bg-danger">Erro</span>
+                                <span class="small text-danger">{{ execucao.mensagem }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-secondary">Nenhuma execução registrada.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+{{ graficos|json_script:"dados-graficos" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    const dados = JSON.parse(document.getElementById("dados-graficos").textContent);
+
+    new Chart(document.getElementById("grafico-bairros"), {
+        type: "bar",
+        data: {
+            labels: dados.bairros.rotulos,
+            datasets: [{
+                label: "Clientes",
+                data: dados.bairros.valores,
+                backgroundColor: "#0d6efd"
+            }],
+        },
+        options: { plugins: { legend: { display: false } } },
+    });
+
+    new Chart(document.getElementById("grafico-auditoria"), {
+        type: "bar",
+        data: {
+            labels: dados.auditoria.rotulos,
+            datasets: [{
+                label: "Correções Realizadas",
+                data: dados.auditoria.valores,
+                backgroundColor: "#198754"
+            }],
+        },
+        options: { plugins: { legend: { display: false } } },
+    });
+</script>
+</body>
+</html>
