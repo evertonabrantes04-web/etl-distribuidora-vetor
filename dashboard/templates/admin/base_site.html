@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | Governança Distribuidora Vetor{% endblock %}
+
+{% block extrastyle %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary: #1e40af;
+        --secondary: #0f172a;
+        --accent: #38bdf8;
+        --header-bg: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
+        --header-color: #ffffff;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    }
+
+    #header {
+        background: var(--header-bg) !important;
+        color: #ffffff !important;
+        padding: 14px 24px !important;
+        border-bottom: 3px solid #2563eb;
+    }
+
+    #branding h1, #branding h1 a:link, #branding h1 a:visited {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 1.25rem !important;
+    }
+
+    .module h2, .module caption, .inline-group h2 {
+        background: #1e293b !important;
+        color: #ffffff !important;
+        border-radius: 6px 6px 0 0;
+        font-weight: 600 !important;
+    }
+
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+        background: #2563eb !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        padding: 8px 16px !important;
+    }
+
+    .btn-voltar-dashboard {
+        background-color: #10b981;
+        color: #ffffff !important;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        margin-right: 12px;
+        font-size: 0.85rem;
+    }
+
+    .btn-voltar-dashboard:hover {
+        background-color: #059669;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">Governança de Dados — Distribuidora Vetor</a>
+</h1>
+{% endblock %}
+
+{% block usertools %}
+<div id="user-tools">
+    <a href="/" class="btn-voltar-dashboard">&larr; Voltar ao Dashboard</a>
+    {{ block.super }}
+</div>
+{% endblock %}
