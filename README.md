@@ -55,14 +55,6 @@ Para que duas pessoas desenvolvam o sistema em paralelo usando o **GitHub Deskto
 | **Etapa 2: Visualização e Testes** | **Dev 1:** Escreve a suíte completa de testes em `etl/tests.py` usando `unittest.mock` para simular o ViaCEP offline.<br>**Dev 2:** Cria `dashboard/views.py` e `painel.html` com os cards de indicadores e gráficos comparativos em `Chart.js`. | **Ambos em paralelo** *(arquivos separados)*. |
 | **Etapa 3: Revisão e Deploy** | Integrar as duas frentes via GitHub Desktop, revisar o Relatório de Trade-offs e publicar a aplicação no **Render**. | **Dupla em conjunto**. |
 
-### Regra de Ouro no GitHub Desktop para a Dupla
-
-1. **Antes de começar a programar no dia:** Abra o **GitHub Desktop** e clique em **Fetch origin** (e em **Pull origin**, caso apareça atualização do colega).
-2. **Durante o desenvolvimento:** Edite apenas os arquivos da sua frente listados na tabela acima.
-3. **Ao concluir uma etapa:** Teste no terminal, abra o **GitHub Desktop**, escreva um resumo claro no campo *Summary* (ex.: `"Implementa pipeline ETL e comando importar_clientes"`), clique em **Commit to main** e depois em **Push origin**.
-
----
-
 ## 2. Diagnóstico da Base Real (`clientes_distribuidora_vetor.csv`)
 
 A inspeção da base fornecida para o desafio revelou **47 registros** distribuídos em **11 colunas** (`id_cliente`, `razao_social`, `cnpj`, `telefone`, `email`, `bairro_informado`, `cep`, `cidade`, `uf`, `data_cadastro` e `vendedor_responsavel`). Todos os 47 registros apresentam ao menos uma inconsistência (média de $2,74$ campos inconsistentes por cliente):
