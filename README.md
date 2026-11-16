@@ -1430,7 +1430,7 @@ O sistema foi arquitetado em duas aplicações Django acopladas (`etl` e `dashbo
 
 ---
 
-## 2. Frente 1: Motor ETL, Normalização e Testes (Desenvolvido pela Dupla)
+## 2. Frente 1: Motor ETL, Normalização e Testes (Dev 1)
 
 A Frente 1 estruturou o núcleo de processamento de dados (`etl/pipeline.py`) garantindo qualidade e reprodutibilidade:
 
@@ -1467,7 +1467,7 @@ A Frente 1 estruturou o núcleo de processamento de dados (`etl/pipeline.py`) ga
 
 ---
 
-## 3. Frente 2: Governança Visual, Dashboard, Admin e Exportação (Desenvolvido por Você)
+## 3. Frente 2: Governança Visual, Dashboard, Admin e Exportação (Dev 2 )
 
 A Frente 2 transformou o banco de dados tratado em ferramentas visuais e administrativas de alto valor comercial:
 
