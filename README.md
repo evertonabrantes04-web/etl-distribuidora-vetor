@@ -53,7 +53,7 @@ Para que duas pessoas desenvolvam o sistema em paralelo usando o **GitHub Deskto
 | **Fase 0: Esqueleto Base** | Clonar o repositório, iniciar o `uv`, criar o projeto `config` e as apps `etl` e `dashboard`, configurar `.gitignore`, `settings.py` e `etl/models.py`, rodar `makemigrations` e `migrate` e fazer o primeiro *Push*. | **Desenvolvedor 1** *(Desenvolvedor 2 faz o Clone e roda `uv sync` + `migrate` logo em seguida)*. |
 | **Etapa 1: Núcleo Funcional** | **Dev 1:** Cria `etl/pipeline.py` e o comando `importar_clientes.py`, testando a carga dos 47 clientes via terminal.<br>**Dev 2:** Configura `etl/admin.py` com filtros de auditoria e cria as rotas de upload e exportação Excel em `etl/views.py`. | **Ambos em paralelo** *(arquivos separados)*. |
 | **Etapa 2: Visualização e Testes** | **Dev 1:** Escreve a suíte completa de testes em `etl/tests.py` usando `unittest.mock` para simular o ViaCEP offline.<br>**Dev 2:** Cria `dashboard/views.py` e `painel.html` com os cards de indicadores e gráficos comparativos em `Chart.js`. | **Ambos em paralelo** *(arquivos separados)*. |
-| **Etapa 3: Revisão e Deploy** | Integrar as duas frentes via GitHub Desktop, revisar o Relatório de Trade-offs e publicar a aplicação no **Render**. | **Dupla em conjunto**. |
+| **Etapa 3: Revisão e Deploy** | Integrar as duas frentes via GitHub Desktop, revisar o Relatório de Trade-offs e publicar a aplicação no **Render**. |
 
 ## 2. Diagnóstico da Base Real (`clientes_distribuidora_vetor.csv`)
 
@@ -108,7 +108,7 @@ Sem o pipeline, qualquer relatório comercial agrupado por bairro gerava **26 li
 
 ## 4. Fase 0: Criar o Esqueleto Base do Projeto
 
-> **Atenção Dupla:** Esta Fase 0 deve ser executada por **apenas uma pessoa** (Desenvolvedor 1). Ao final dela, os arquivos são enviados ao GitHub e a segunda pessoa apenas clona o projeto pronto.
+> Esta Fase 0 deve ser executada por **apenas uma pessoa** (Desenvolvedor 1). Ao final dela, os arquivos são enviados ao GitHub e a segunda pessoa apenas clona o projeto pronto.
 
 ### 4.1. Clonar o repositório e iniciar o `uv`
 
@@ -1407,8 +1407,8 @@ Assim que o deploy terminar, o sistema já subirá com os 47 clientes da Distrib
 **Projeto Integrador — Distribuidora Vetor | Saneamento, Governança e Dashboard B2B**
 
 * **Divisão de Responsabilidades:**
-* **Frente 1 (Dupla):** Motor ETL, normalização léxica/estrutural, cache de CEP, resolução de conflitos geográficos e suíte de testes com *mocks*.
-* **Frente 2 (Você):** Dashboard executivo em Bootstrap 5/Chart.js, curadoria avançada no Django Admin, upload web de CSV e exportação multi-aba em Excel (`.xlsx`).
+* **Frente 1 (Dev1):** Motor ETL, normalização léxica/estrutural, cache de CEP, resolução de conflitos geográficos e suíte de testes com *mocks*.
+* **Frente 2 (Dev2):** Dashboard executivo em Bootstrap 5/Chart.js, curadoria avançada no Django Admin, upload web de CSV e exportação multi-aba em Excel (`.xlsx`).
 
 
 
