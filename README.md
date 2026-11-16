@@ -1409,3 +1409,113 @@ uv run python manage.py importar_clientes dados/clientes_distribuidora_vetor.csv
    * **Start Command:** `uv run gunicorn config.wsgi:application`
 
 Assim que o deploy terminar, o sistema já subirá com os 47 clientes da Distribuidora Vetor carregados, higienizados e com os gráficos e tabelas de auditoria prontos para demonstração!
+
+# DOCUMENTAÇÃO TÉCNICA CONSOLIDADA
+
+**Projeto Integrador — Distribuidora Vetor | Saneamento, Governança e Dashboard B2B**
+
+* **Divisão de Responsabilidades:**
+* **Frente 1 (Dupla):** Motor ETL, normalização léxica/estrutural, cache de CEP, resolução de conflitos geográficos e suíte de testes com *mocks*.
+* **Frente 2 (Você):** Dashboard executivo em Bootstrap 5/Chart.js, curadoria avançada no Django Admin, upload web de CSV e exportação multi-aba em Excel (`.xlsx`).
+
+
+
+---
+
+## 1. Visão Geral do Projeto
+
+A base cadastral da **Distribuidora Vetor** continha 47 registros com inconsistências em 11 colunas (26 grafias diferentes para os mesmos bairros, CEPs vazios ou zerados `00000-000`, datas em quatro formatos distintos, e-mails com acentuação e CNPJs sem máscara).
+
+O sistema foi arquitetado em duas aplicações Django acopladas (`etl` e `dashboard`) para garantir o ciclo completo do dado: **da extração e tratamento rigoroso no backend até a visualização executiva, governança administrativa e entrega de relatórios para a diretoria**.
+
+---
+
+## 2. Frente 1: Motor ETL, Normalização e Testes (Desenvolvido pela Dupla)
+
+A Frente 1 estruturou o núcleo de processamento de dados (`etl/pipeline.py`) garantindo qualidade e reprodutibilidade:
+
+* **Extração (`extrair`):** Leitura robusta do arquivo CSV via `pandas` utilizando `dtype=str`, preservando zeros à esquerda de CEPs, telefones e IDs, com validação prévia das 11 colunas obrigatórias.
+
+
+* **Transformação e Limpeza (`transformar`):**
+* **CNPJ & Telefone:** Extração de dígitos por Regex, aplicando máscaras padrão (`XX.XXX.XXX/XXXX-XX` e formatação nacional com remoção de DDI `+55`).
+
+
+* **E-mail:** Remoção de acentuação em domínios via decomposição Unicode (`NFKD`) e conversão para minúsculas (conformidade RFC 5322).
+
+
+* **Datas:** Conversão multiformato inteligente (ISO, barras, hífens e formato em inglês como `Dec 24, 2023`) para o tipo data padrão.
+
+
+* **Bairros:** Normalização via `NFKD`, remoção de sufixos de UF (`- DF` / `/DF`) e mapeamento para as **4 regiões administrativas canônicas**: *Águas Claras, Taguatinga, Vicente Pires e Guará*.
+
+
+
+
+* **Enriquecimento e Cache de CEP (`CacheCEP`):** Consulta otimizada à API ViaCEP (com fallback postal por faixa de CEP em falhas de rede) armazenada em tabela de cache local no SQLite para eliminar requisições redundantes.
+
+
+* **Resolução de Conflitos Geográficos:** Priorização do CEP oficial sobre o texto informado quando há divergência (ex.: cliente `CLI0002`, cujo texto dizia *"Sul (Águas Claras)"*, mas o CEP pertencia a *Taguatinga*, marcado como `DIVERGENCIA_CEP_CORRIGIDA`).
+
+
+* **Carga Idempotente (`carregar`):** Utilização de transações atômicas (`transaction.atomic()`) e inserção em lote (`bulk_create` com `update_conflicts=True` na chave `id_cliente`), permitindo reimportações seguras sem duplicação.
+
+
+* **Testes Automatizados (`etl/tests.py`):** Validação de todas as funções unitárias e de integração utilizando `@patch` (`unittest.mock`) para simular o ViaCEP de forma 100% offline.
+
+
+
+---
+
+## 3. Frente 2: Governança Visual, Dashboard, Admin e Exportação (Desenvolvido por Você)
+
+A Frente 2 transformou o banco de dados tratado em ferramentas visuais e administrativas de alto valor comercial:
+
+* **Dashboard Executivo (`dashboard/`):**
+* **View de Agregados (`dashboard/views.py`):** Consulta otimizada ao ORM do Django utilizando contagens distintas (`distinct=True`), somas e filtros condicionais (`Q`) para calcular métricas em tempo real.
+
+
+* **Interface Moderna (`painel.html`):** Desenvolvida com Bootstrap 5.3, Google Fonts (*Inter*) e Bootstrap Icons. Contém cards de KPI com animação em *hover*, gráficos interativos em **Chart.js** (distribuição de clientes por bairro e contagem de correções por campo na auditoria) e uma tabela de rastreabilidade equipada com **filtro de busca instantânea em JavaScript**.
+
+
+
+
+* **Mesa de Curadoria no Django Admin (`etl/admin.py`):**
+* **Badges Visuais:** Identificação colorida dos status de validação (`VALIDADO`, `VALIDADO_SEM_CEP`, `DIVERGENCIA_CEP_CORRIGIDA` e `REVISAO_MANUAL` — destacando o quarentenado `CLI0047`).
+
+
+* **Coluna Comparativa e Ações em Massa:** Exibição lado a lado do bairro original riscado em cinza e o bairro tratado em negrito, além de uma *action* customizada para aprovar registros em revisão manual.
+
+
+* **Blindagem da Auditoria:** Tabela `LogAuditoria` configurada como `readonly` (`has_add_permission = False` e `has_change_permission = False`), assegurando que o histórico corporativo seja imutável.
+
+
+* **Dicionário Dinâmico (`DicionarioBairro`):** Gestão de sinónimos diretamente pelo painel administrativo, permitindo que a equipe comercial adicione novas variantes sem intervenção de código.
+
+
+
+
+* **Exportação de Relatórios Excel (`etl/views.py`):**
+* Rota `/etl/exportar/` construída com `openpyxl` e buffers em memória (`BytesIO`), gerando um arquivo corporativo (`.xlsx`) com **3 abas estruturadas**: *Clientes Tratados*, *Resumo por Bairro* e *Log de Auditoria*.
+
+
+
+
+* **Upload Web de CSV:**
+* Formulário interativo na interface principal que permite ao usuário enviar novos arquivos e executar o motor ETL sob demanda com feedback imediato via mensagens do Django.
+
+
+
+
+
+---
+
+## 4. Decisões de Engenharia e Trade-offs (Resumo Conjunto)
+
+1. **Quarentena em vez de descarte (`dropna`):** Registros sem bairro e sem CEP (como o `CLI0047`) são mantidos como `REVISAO_MANUAL` para preservar ativos comerciais e evitar viés nos relatórios.
+
+
+2. **CEP como Verdade Geográfica:** Priorizar o CEP resolve erros de digitação de campo livre, mas assume a precisão das faixas postais oficiais do Distrito Federal.
+
+
+3. **Dicionário Híbrido (Código + Banco):** Combina regras determinísticas fixas com a tabela `DicionarioBairro` no SQLite, unindo previsibilidade técnica com autonomia de gestão para o negócio.
