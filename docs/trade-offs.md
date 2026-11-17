@@ -1,28 +1,36 @@
----
+# RELATÓRIO DE TRADE-OFFS E LIMITES CONHECIDOS
 
-## 7. Relatório de Trade-offs e Limites Conhecidos
+**Projeto Integrador — Distribuidora Vetor | Decisões de Engenharia e Governança**
 
-Esta seção documenta as decisões de engenharia adotadas pela equipe e responde diretamente ao entregável de comunicação da rubrica de avaliação:
-
-### 7.1. O que decidimos automatizar vs. O que decidimos tratar manualmente
-
-* **Automatizado no Pipeline (`transformar()`):**
-  * **Padronização Sintática e Léxica:** Remoção de acentuação em e-mails (conformidade RFC 5322), formatação de CNPJ (14 dígitos), remoção de DDI `+55` em telefones, conversão multiformato de datas (`YYYY-MM-DD`, `DD/MM/YYYY`, `DD-MM-YYYY` e datas em inglês como `Dec 24, 2023`) e anulação de CEPs fictícios (`00000-000`).
-  * **Unificação de Bairros e Subdivisões:** Decomposição Unicode (`NFKD`), remoção de sufixos de UF (`- DF`, `/DF`) e mapeamento determinístico de subdivisões informais (`"Sul (Águas Claras)"`, `"Norte (Aguas Claras)"`, `"Guará I"`, `"Guará II"`, `"Vte Pires"`) para as 4 regiões administrativas canônicas (**Águas Claras**, **Taguatinga**, **Vicente Pires** e **Guará**).
-  * **Resolução de Divergência entre Bairro e CEP:** Quando o CEP é válido e retorna um bairro oficial divergente do texto digitado pelo vendedor (como no cliente `CLI0002`, cujo texto informava `"Sul (Aguas Claras)"`, mas o CEP `72140-010` pertence a **Taguatinga**), o sistema prioriza a fonte geocodificada oficial (CEP) e marca o registro com `status_validacao = "DIVERGENCIA_CEP_CORRIGIDA"`.
-* **Tratamento Manual / Quarentena (`REVISAO_MANUAL`):**
-  * Em vez de descartar registros incompletos com `dropna()` (o que causaria perda de clientes ativos e viés nos relatórios comerciais), registros sem bairro informado e sem CEP válido (como o `CLI0047 - Mercadinho Sem Endereço`) são preservados no banco com `bairro_tratado = "Não Informado"` e `status_validacao = "REVISAO_MANUAL"`. A equipe comercial pode filtrá-los no **Django Admin** e corrigi-los manualmente.
-
-### 7.2. Principais Trade-offs Arquiteturais
-
-1. **Dicionário Persistido no Banco (`DicionarioBairro`) vs. Hardcoded:**
-   * Combinamos um dicionário base no código com a tabela `DicionarioBairro` no SQLite. O *trade-off* é realizar uma leitura inicial no banco a cada execução do ETL, mas o benefício é permitir que analistas de negócio cadastrem novas variantes pelo Django Admin sem necessidade de alterar código ou realizar novo deploy.
-2. **Cache Local de CEP (`CacheCEP`) vs. Consulta Direta:**
-   * Consultar a API do ViaCEP para cada linha em toda execução geraria latência de rede $O(N)$ e risco de bloqueio (*Rate Limit*). A tabela `CacheCEP` armazena os CEPs já consultados no banco local, reduzindo o tempo de rede a zero nas reexecuções.
-
-### 7.3. Limites Conhecidos da Solução
-
-* **CNPJs Sintéticos na Base do Desafio:** Os 47 CNPJs fornecidos no arquivo `clientes_distribuidora_vetor.csv` possuem 14 dígitos numéricos, mas foram gerados sem dígito verificador Módulo 11 real. Por isso, o validador verifica a estrutura de 14 dígitos numéricos sem descartar por Módulo 11.
-* **CEPs de Fronteira no Distrito Federal:** Os clientes `CLI0017` e `CLI0033` declaram `"Vicente Pires"`, mas utilizam o CEP `72110-800` (faixa historicamente compartilhada com Taguatinga Norte antes do desmembramento postal). O sistema registra a mudança na auditoria para permitir revisão caso a distribuidora utilize roteirização por micro-região.
+Esta seção documenta as decisões arquiteturais e de engenharia adotadas pela equipe no desenvolvimento do sistema, respondendo diretamente aos critérios de avaliação da rubrica técnica.
 
 ---
+
+## 1. Automação vs. Tratamento Manual (Quarentena)
+
+### 1.1. Automatizado no Pipeline (`transformar()`)
+* **Padronização Sintática e Léxica:** Remoção de acentuação em e-mails (conformidade RFC 5322), formatação de CNPJ (14 dígitos), remoção de DDI `+55` em telefones, conversão multiformato de datas (`YYYY-MM-DD`, `DD/MM/YYYY`, `DD-MM-YYYY` e formatos textuais em inglês como `Dec 24, 2023`) e anulação de CEPs inválidos ou zerados (`00000-000`).
+* **Unificação de Bairros e Subdivisões:** Decomposição Unicode (`NFKD`), remoção de sufixos de UF (`- DF`, `/DF`) e mapeamento determinístico de subdivisões informais (`"Sul (Águas Claras)"`, `"Norte (Aguas Claras)"`, `"Guará I"`, `"Guará II"`, `"Vte Pires"`) para as **4 regiões administrativas canônicas**: *Águas Claras, Taguatinga, Vicente Pires e Guará*.
+* **Resolução de Divergência entre Bairro e CEP:** Quando o CEP é válido e retorna um bairro oficial divergente do texto digitado pelo vendedor (ex.: cliente `CLI0002`, cujo texto indicava `"Sul (Aguas Claras)"`, mas o CEP `72140-010` pertence oficialmente a **Taguatinga**), o sistema prioriza a fonte geocodificada oficial e marca o registro com o status `DIVERGENCIA_CEP_CORRIGIDA`.
+
+### 1.2. Tratamento Manual / Quarentena (`REVISAO_MANUAL`)
+* **Preservação de Ativos B2B:** Em vez de descartar registros incompletos utilizando comandos destrutivos como `dropna()` (o que geraria perda de clientes ativos e distorção nos relatórios de vendas), os registros desprovidos de bairro e CEP válido (como o `CLI0047 - Mercadinho Sem Endereço`) são mantidos no banco com `bairro_tratado = "Não Informado"` e `status_validacao = "REVISAO_MANUAL"`. A equipe comercial pode filtrá-los diretamente no **Django Admin** para curadoria humana.
+
+---
+
+## 2. Principais Trade-offs Arquiteturais
+
+1. **Dicionário Híbrido (`DicionarioBairro` no Banco vs. Hardcoded):**
+   * *Abordagem:* Combinamos um dicionário base fixo no código (`MAPA_BAIRROS_PADRAO`) com uma tabela relacional dinâmica (`DicionarioBairro`) no SQLite.
+   * *Trade-off:* O custo computacional é realizar uma consulta adicional na tabela a cada execução do ETL. O benefício gerado compensa amplamente: analistas de negócio ganham autonomia para cadastrar novas variantes e sinônimos diretamente pelo Django Admin, sem a necessidade de alterar código-fonte ou realizar novos *deploys*.
+
+2. **Cache Local de CEP (`CacheCEP`) vs. Consulta Direta em Rede:**
+   * *Abordagem:* Armazenamento em tabela local do SQLite das consultas bem-sucedidas à API pública do ViaCEP.
+   * *Trade-off:* Consome espaço em disco para metadados postais, mas elimina a complexidade de latência de rede $O(N)$ e o risco de bloqueio por *Rate Limit* em reexecuções consecutivas do pipeline.
+
+---
+
+## 3. Limites Conhecidos da Solução
+
+* **Validação Estrutural de CNPJ:** Os 47 registros fornecidos no dataset contêm CNPJs com 14 dígitos numéricos gerados sinteticamente para fins didáticos (sem validação real por Módulo 11). O validador do pipeline assegura a estrutura de 14 caracteres, mas não descarta por dígito verificador.
+* **CEPs de Fronteira no Distrito Federal:** Casos específicos como os clientes `CLI0017` e `CLI0033`, que declaram `"Vicente Pires"` mas utilizam o CEP `72110-800` (faixa postal historicamente compartilhada com Taguatinga Norte), evidenciam os limites de granularidade das bases postais. O sistema registra a alteração na trilha de auditoria para revisão gerencial.
