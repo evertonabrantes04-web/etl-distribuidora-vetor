@@ -50,7 +50,7 @@ Siga os passos abaixo para rodar o projeto localmente:
 
 Para manter o repositório limpo, a documentação técnica foi modularizada na pasta `docs/`:
 
-* **[Guia Prático de Implementação Passo a Passo](docs/guia-implementacao-passo-a-passo.md)** — Tutorial completo de criação do projeto, models, comandos e templates.
+* **[Guia Prático de Implementação Passo a Passo](docs/tutorial-desenvolvimento.md)** — Tutorial completo de criação do projeto, models, comandos e templates.
 * **[Frente 1: Motor ETL, Normalização e Testes](docs/frente1-etl.md)** — Saneamento de dados, Regex, Unicode (`NFKD`), cache local de CEP e suíte de testes com *mocks*.
 * **[Frente 2: Dashboard, Admin e Relatórios Excel](docs/frente2-dashboard.md)** — Arquitetura da interface moderna em Bootstrap 5, gráficos Chart.js, blindagem da auditoria e exportação multi-aba.
 * **[Relatório de Trade-offs e Limites](docs/trade-offs.md)** — Decisões de engenharia (quarentena `REVISAO_MANUAL`, priorização de CEPs geocodificados e dicionário dinâmico).
