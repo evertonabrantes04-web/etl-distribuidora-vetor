@@ -5,4 +5,5 @@ from . import views
 urlpatterns = [
     path("importar/", views.importar, name="importar"),
     path("exportar/", views.exportar, name="exportar"),
+    path("limpar/", views.limpar_dados, name="limpar_dados"),
 ]

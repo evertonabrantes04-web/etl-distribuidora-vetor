@@ -1,9 +1,12 @@
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
 from django.shortcuts import render
 
 from etl.models import Cliente, Execucao, LogAuditoria
 
 
+
+@login_required
 def painel(request):
     resumo_clientes = Cliente.objects.aggregate(
         total=Count("id"),

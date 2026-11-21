@@ -1,4 +1,7 @@
 .venv/
 __pycache__/
 db.sqlite3
+db.sqlite3.bkp
 etl.log
+.env
+projeto_completo.txt
