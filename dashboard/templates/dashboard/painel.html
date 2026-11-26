@@ -148,13 +148,9 @@
                         </a>
                     {% endif %}
 
-                    <span class="badge bg-white bg-opacity-10 border border-light border-opacity-25 text-white px-3 py-2 fw-normal d-inline-flex align-items-center"
-                          style="max-width: 190px;"
-                          title="{{ request.user.get_full_name|default:request.user.username|default:request.user.email }}">
-                        <i class="bi bi-person-circle me-1 flex-shrink-0"></i>
-                        <span class="text-truncate">
-                            {{ request.user.get_full_name|default:request.user.username|default:request.user.email }}
-                        </span>
+                    <span class="badge bg-white bg-opacity-10 border border-light border-opacity-25 text-white px-3 py-2 fw-normal">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {{ request.user.get_full_name|default:request.user.email|default:request.user.username }}
                     </span>
 
                     <form method="post" action="{% url 'account_logout' %}" class="m-0">
@@ -405,4 +401,141 @@
                 <tbody>
                 {% for execucao in ultimas %}
                     <tr>
-                        <td class="text-
+                        <td class="text-nowrap">{{ execucao.iniciada_em|date:"d/m/Y H:i" }}</td>
+                        <td class="fw-medium"><i class="bi bi-filetype-csv text-secondary me-1"></i>{{ execucao.arquivo }}</td>
+                        <td class="text-end">{{ execucao.lidas }}</td>
+                        <td class="text-end fw-semibold">{{ execucao.carregadas }}</td>
+                        <td class="text-end">{{ execucao.em_revisao }}</td>
+                        <td>
+                            {% if execucao.sucesso %}
+                                <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle me-1">
+                                    <i class="bi bi-check2-circle me-1"></i>OK
+                                </span>
+                                <span class="small text-secondary">{{ execucao.mensagem }}</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle me-1">
+                                    <i class="bi bi-x-circle me-1"></i>Erro
+                                </span>
+                                <span class="small text-danger">{{ execucao.mensagem }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-secondary py-4">Nenhuma execução registrada.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<!-- Modal de Confirmação para Limpar Dados do ETL -->
+<div class="modal fade" id="modalLimparDados" tabindex="-1" aria-labelledby="modalLimparDadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-semibold" id="modalLimparDadosLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Limpar Base do Dashboard
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" action="{% url 'limpar_dados' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="mb-2">Esta ação irá remover permanentemente os dados atuais do pipeline:</p>
+                    <ul class="small text-secondary mb-3">
+                        <li>Todos os <strong>clientes tratados</strong> ({{ clientes.total|default:0 }})</li>
+                        <li>Todos os <strong>logs de auditoria</strong> ({{ total_logs|default:0 }})</li>
+                        <li>Todo o <strong>histórico de execuções</strong> ({{ execucoes.total|default:0 }})</li>
+                    </ul>
+                    <p class="small text-muted mb-3">
+                        Seu usuário, contas vinculadas (Google/Microsoft) e o Dicionário de Bairros serão mantidos.
+                    </p>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="limpar_cache_cep" id="id_limpar_cache_cep">
+                        <label class="form-check-label small" for="id_limpar_cache_cep">
+                            Limpar também o cache local de CEPs (desmarcado deixa a próxima importação mais rápida)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger fw-medium">
+                        <i class="bi bi-trash3 me-1"></i> Confirmar Limpeza
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{ graficos|json_script:"dados-graficos" }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    const dados = JSON.parse(document.getElementById("dados-graficos").textContent);
+
+    new Chart(document.getElementById("grafico-bairros"), {
+        type: "bar",
+        data: {
+            labels: dados.bairros.rotulos,
+            datasets: [{
+                label: "Clientes",
+                data: dados.bairros.valores,
+                backgroundColor: "#2563eb",
+                borderRadius: 8,
+                maxBarThickness: 48
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: "#f1f5f9" } },
+                x: { grid: { display: false } }
+            }
+        },
+    });
+
+    new Chart(document.getElementById("grafico-auditoria"), {
+        type: "bar",
+        data: {
+            labels: dados.auditoria.rotulos.map(r => r.replace("_", " ").split(" ")),
+            datasets: [{
+                label: "Correções Realizadas",
+                data: dados.auditoria.valores,
+                backgroundColor: "#10b981",
+                borderRadius: 8,
+                maxBarThickness: 48
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: "#f1f5f9" } },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 0,
+                        minRotation: 0,
+                        autoSkip: false
+                    }
+                }
+            }
+        },
+    });
+
+    // Filtro de busca instantânea na tabela de auditoria
+    document.getElementById("filtro-auditoria").addEventListener("input", function (e) {
+        const termo = e.target.value.toLowerCase();
+        const linhas = document.querySelectorAll("#tabela-auditoria tbody tr");
+        linhas.forEach(linha => {
+            linha.style.display = linha.textContent.toLowerCase().includes(termo) ? "" : "none";
+        });
+    });
+</script>
+</body>
+</html>
