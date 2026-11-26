@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade — Distribuidora Vetor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<main class="container py-5" style="max-width: 720px;">
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+        <h1 class="h3 fw-bold mb-3">Política de Privacidade</h1>
+        <p class="text-secondary small">Distribuidora Vetor — Pipeline ETL e Saneamento de Dados</p>
+        <hr>
+        <h2 class="h6 fw-semibold mt-3">1. Dados coletados na autenticação</h2>
+        <p class="text-secondary">
+            Ao optar por entrar com Google ou Microsoft, coletamos apenas seu nome e endereço de e-mail
+            exclusivamente para identificar sua sessão e evitar contas duplicadas na plataforma.
+        </p>
+        <h2 class="h6 fw-semibold mt-3">2. Uso e compartilhamento</h2>
+        <p class="text-secondary">
+            Seus dados de login não são vendidos nem compartilhados com terceiros. Arquivos CSV enviados
+            no painel são processados apenas para saneamento e auditoria dentro da aplicação.
+        </p>
+        <h2 class="h6 fw-semibold mt-3">3. Exclusão de dados</h2>
+        <p class="text-secondary">
+            Os dados do pipeline podem ser removidos diretamente pelo botão <strong>Limpar Dados</strong> no painel.
+            Para remoção da conta de usuário, entre em contato pelo e-mail de suporte cadastrado na plataforma.
+        </p>
+        <div class="mt-4">
+            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Voltar ao Dashboard</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

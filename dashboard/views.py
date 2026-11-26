@@ -1,12 +1,19 @@
-from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q, Sum
 from django.shortcuts import render
 
 from etl.models import Cliente, Execucao, LogAuditoria
 
+# --- NOVO (1/2): Mapa de nomes amigáveis para a coluna "Campo" ---
+NOMES_CAMPOS = {
+    "bairro_informado": "Bairro",
+    "telefone": "Telefone",
+    "email": "E-mail",
+    "data_cadastro": "Data de Cadastro",
+    "cnpj": "CNPJ",
+    "cep": "CEP",
+}
 
 
-@login_required
 def painel(request):
     resumo_clientes = Cliente.objects.aggregate(
         total=Count("id"),
@@ -37,6 +44,37 @@ def painel(request):
 
     ultimas_execucoes = list(Execucao.objects.all()[:10])
     ultimos_logs = list(LogAuditoria.objects.all()[:20])
+
+    # --- NOVO (2/2): Enriquece os logs com razão social, iniciais e código ---
+    ids_clientes = {log.id_cliente for log in ultimos_logs}
+    mapa_clientes = (
+        dict(
+            Cliente.objects.filter(id_cliente__in=ids_clientes).values_list(
+                "id_cliente", "razao_social"
+            )
+        )
+        if ids_clientes
+        else {}
+    )
+
+    for log in ultimos_logs:
+        digitos = "".join(ch for ch in log.id_cliente if ch.isdigit())
+        log.codigo_formatado = f"#{digitos}" if digitos else log.id_cliente
+        log.nome_cliente = mapa_clientes.get(
+            log.id_cliente, f"Cliente {log.codigo_formatado}"
+        )
+
+        partes = log.nome_cliente.split()
+        log.iniciais_cliente = (
+            (partes[0][0] + partes[1][0]).upper()
+            if len(partes) > 1
+            else log.nome_cliente[:2].upper()
+        )
+
+        log.campo_formatado = NOMES_CAMPOS.get(
+            log.campo, log.campo.replace("_", " ").title()
+        )
+    # --- FIM DO TRECHO NOVO ---
 
     graficos = {
         "bairros": {

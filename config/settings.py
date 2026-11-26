@@ -23,13 +23,22 @@ load_dotenv(BASE_DIR / ".env")
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_p1mi@m2&4k)fhmpq3(ww9xfhjo+^@lkv05l5ge0s^3)ojkt!d'
+# --- ALTERADO (1/3): Segurança, DEBUG e domínios do Render ---
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-_p1mi@m2&4k)fhmpq3(ww9xfhjo+^@lkv05l5ge0s^3)ojkt!d",
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = []
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "http://localhost:8000"]
+
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+# --- FIM ALTERADO (1/3) ---
 
 
 # Application definition
@@ -42,7 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'etl', 
+    'etl',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -52,6 +61,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # --- ALTERADO (2/3): WhiteNoise logo abaixo de SecurityMiddleware ---
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # --- FIM ALTERADO (2/3) ---
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -128,6 +140,22 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# --- ALTERADO (3/3): Estáticos com WhiteNoise e suporte a HTTPS no Render ---
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if not DEBUG else "http"
+# --- FIM ALTERADO (3/3) ---
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -147,7 +175,7 @@ AUTHENTICATION_BACKENDS = [
 
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/accounts/login/"
+LOGOUT_REDIRECT_URL = "/"
 
 # Regras de conta e vinculação automática (Account Linking)
 ACCOUNT_UNIQUE_EMAIL = True

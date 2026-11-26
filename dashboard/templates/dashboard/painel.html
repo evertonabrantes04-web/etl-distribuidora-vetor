@@ -133,25 +133,25 @@
             </div>
 
             <div class="d-flex flex-wrap align-items-center gap-2">
-                {% if request.user.is_authenticated %}
-                    <span class="badge bg-white bg-opacity-10 border border-light border-opacity-25 text-white px-3 py-2 fw-normal">
-                        <i class="bi bi-person-circle me-1"></i>
-                        {{ request.user.get_full_name|default:request.user.email|default:request.user.username }}
-                    </span>
+                <a href="{% url 'exportar' %}" class="btn btn-success fw-medium shadow-sm">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel (.xlsx)
+                </a>
 
+                <button type="button" class="btn btn-danger fw-medium shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLimparDados">
+                    <i class="bi bi-trash3 me-1"></i> Limpar Dados
+                </button>
+
+                {% if request.user.is_authenticated %}
                     {% if request.user.is_staff %}
                         <a href="/admin/" class="btn btn-outline-light fw-medium">
                             <i class="bi bi-sliders me-1"></i> Painel Admin / Curadoria
                         </a>
                     {% endif %}
 
-                    <a href="{% url 'exportar' %}" class="btn btn-success fw-medium shadow-sm">
-                        <i class="bi bi-file-earmark-excel me-1"></i> Exportar Excel (.xlsx)
-                    </a>
-
-                    <button type="button" class="btn btn-danger fw-medium shadow-sm" data-bs-toggle="modal" data-bs-target="#modalLimparDados">
-                        <i class="bi bi-trash3 me-1"></i> Limpar Dados
-                    </button>
+                    <span class="badge bg-white bg-opacity-10 border border-light border-opacity-25 text-white px-3 py-2 fw-normal">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {{ request.user.get_full_name|default:request.user.email|default:request.user.username }}
+                    </span>
 
                     <form method="post" action="{% url 'account_logout' %}" class="m-0">
                         {% csrf_token %}
@@ -219,7 +219,7 @@
                         <i class="bi bi-people-fill"></i>
                     </div>
                 </div>
-               <div class="small">
+                <div class="small">
                     {% if clientes.em_revisao %}
                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
                             <i class="bi bi-exclamation-triangle me-1"></i>{{ clientes.em_revisao }} em revisão manual
@@ -338,8 +338,30 @@
                 <tbody>
                 {% for log in ultimos_logs %}
                     <tr>
-                        <td class="fw-bold text-dark">{{ log.id_cliente }}</td>
-                        <td><span class="badge rounded-pill text-bg-secondary">{{ log.campo }}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary fw-bold d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width: 36px; height: 36px; font-size: 0.8rem;">
+                                    {{ log.iniciais_cliente }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark lh-sm">{{ log.nome_cliente }}</div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <span class="badge bg-light text-secondary border fw-normal"
+                                              style="font-size: 0.72rem;"
+                                              title="Código original no CSV: {{ log.id_cliente }}">
+                                            Cód. {{ log.codigo_formatado }}
+                                        </span>
+                                        <span class="visually-hidden">{{ log.id_cliente }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill text-bg-secondary fw-medium">
+                                {{ log.campo_formatado }}
+                            </span>
+                        </td>
                         <td>
                             <span class="val-old">{{ log.valor_original }}</span>
                             <i class="bi bi-arrow-right mx-1 text-secondary small"></i>
@@ -449,7 +471,6 @@
     </div>
 </div>
 
-
 {{ graficos|json_script:"dados-graficos" }}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -481,7 +502,7 @@
     new Chart(document.getElementById("grafico-auditoria"), {
         type: "bar",
         data: {
-            labels: dados.auditoria.rotulos,
+            labels: dados.auditoria.rotulos.map(r => r.replace("_", " ").split(" ")),
             datasets: [{
                 label: "Correções Realizadas",
                 data: dados.auditoria.valores,
@@ -495,7 +516,14 @@
             plugins: { legend: { display: false } },
             scales: {
                 y: { beginAtZero: true, grid: { color: "#f1f5f9" } },
-                x: { grid: { display: false } }
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 0,
+                        minRotation: 0,
+                        autoSkip: false
+                    }
+                }
             }
         },
     });

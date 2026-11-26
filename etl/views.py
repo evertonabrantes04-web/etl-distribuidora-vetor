@@ -2,7 +2,6 @@ from io import BytesIO
 
 import pandas as pd
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count
 from django.http import HttpResponse
@@ -13,7 +12,6 @@ from .models import CacheCEP, Cliente, Execucao, LogAuditoria
 from .pipeline import executar
 
 
-@login_required
 @require_POST
 def limpar_dados(request):
     limpar_cache_cep = request.POST.get("limpar_cache_cep") == "on"
@@ -37,7 +35,6 @@ def limpar_dados(request):
 
 TIPO_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-@login_required
 @require_POST
 def importar(request):
     arquivo = request.FILES.get("arquivo")
@@ -57,7 +54,6 @@ def importar(request):
         messages.error(request, f"Falha no ETL: {execucao.mensagem}")
     return redirect("dashboard")
 
-@login_required
 def exportar(request):
     clientes = pd.DataFrame(
         Cliente.objects.values(
