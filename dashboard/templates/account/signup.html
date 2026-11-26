@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta — Distribuidora Vetor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --vetor-bg: #f1f5f9;
+            --vetor-navy: #0f172a;
+            --vetor-blue: #1e40af;
+            --vetor-accent: #2563eb;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--vetor-bg);
+            color: #1e293b;
+        }
+        .login-card {
+            max-width: 440px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .login-banner {
+            background: linear-gradient(135deg, var(--vetor-navy) 0%, var(--vetor-blue) 100%);
+            border-bottom: 4px solid var(--vetor-accent);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+<main class="container min-vh-100 d-flex align-items-center justify-content-center py-4">
+    <div class="card login-card shadow-sm w-100">
+
+        <div class="login-banner p-4 text-center">
+            <span class="badge rounded-pill text-bg-primary px-3 py-1 mb-2">
+                <i class="bi bi-person-plus-fill me-1"></i> Novo Acesso
+            </span>
+            <h1 class="h4 fw-bold mb-1">Criar Conta</h1>
+            <p class="text-white-50 small mb-0">Cadastre-se com e-mail e senha na Distribuidora Vetor</p>
+        </div>
+
+        <div class="card-body p-4">
+
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show small" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger small" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'account_signup' %}" class="js-signup-form">
+                {% csrf_token %}
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+                {% endif %}
+
+                {% if form.username %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label small fw-medium">Nome de usuário</label>
+                    <input
+                        type="text"
+                        name="username"
+                        id="id_username"
+                        class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                        value="{{ form.username.value|default:'' }}"
+                        placeholder="Digite seu nome"
+                        {% if form.username.field.required %}required{% endif %}
+                        autofocus
+                    >
+                    {% for error in form.username.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if form.email %}
+                <div class="mb-3">
+                    <label for="id_email" class="form-label small fw-medium">E-mail</label>
+                    <input
+                        type="email"
+                        name="email"
+                        id="id_email"
+                        class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                        value="{{ form.email.value|default:'' }}"
+                        placeholder="Digite seu eamil"
+                        {% if form.email.field.required %}required{% endif %}
+                    >
+                    {% for error in form.email.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="id_password1" class="form-label small fw-medium">Senha</label>
+                    <input
+                        type="password"
+                        name="password1"
+                        id="id_password1"
+                        class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                        placeholder="Mínimo de 8 caracteres"
+                        required
+                    >
+                    {% for error in form.password1.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                {% if form.password2 %}
+                <div class="mb-4">
+                    <label for="id_password2" class="form-label small fw-medium">Confirmar senha</label>
+                    <input
+                        type="password"
+                        name="password2"
+                        id="id_password2"
+                        class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                        placeholder="Repita a senha"
+                        required
+                    >
+                    {% for error in form.password2.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-medium d-flex align-items-center justify-content-center gap-2">
+                    <span>Criar Conta</span>
+                    <span class="spinner-border spinner-border-sm d-none js-spinner" role="status" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <span class="text-muted small">Já tem uma conta?</span>
+                <a href="{% url 'account_login' %}" class="small fw-semibold text-decoration-none ms-1">
+                    Voltar para o login
+                </a>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.querySelector(".js-signup-form")?.addEventListener("submit", (e) => {
+        const btn = e.currentTarget.querySelector("button[type='submit']");
+        const spinner = e.currentTarget.querySelector(".js-spinner");
+        if (btn) btn.disabled = true;
+        if (spinner) spinner.classList.remove("d-none");
+    });
+</script>
+</body>
+</html>
