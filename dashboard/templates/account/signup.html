@@ -98,7 +98,7 @@
                         id="id_email"
                         class="form-control {% if form.email.errors %}is-invalid{% endif %}"
                         value="{{ form.email.value|default:'' }}"
-                        placeholder="Digite seu eamil"
+                        placeholder="Digite seu email"
                         {% if form.email.field.required %}required{% endif %}
                     >
                     {% for error in form.email.errors %}
